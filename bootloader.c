@@ -6,7 +6,7 @@
 **********************************************************************************/
 
 #include "bootloader.h"
-
+#include "string.h"
 int main(void)
 {
     u16 tryCnt = 65535;
@@ -19,14 +19,17 @@ int main(void)
     CLK->CKDIVR &= (uint8_t)(~CLK_CKDIVR_HSIDIV); //清空(00)即不分频
     while(!(CLK->ICKR & 0x02));   //等待内部时钟稳定
     //set baudrate = 115200, 复位后默认开启uart，格式默认，只需设置波特率及使能收发
-    UART1->BRR2 |= (uint8_t)((uint8_t)(((BaudRate_Mantissa100 - (BaudRate_Mantissa * 100)) << 4) / 100) & (uint8_t)0x0F) |\
-                   (uint8_t)((BaudRate_Mantissa >> 4) & (uint8_t)0xF0);  
-    UART1->BRR1 |= (uint8_t)BaudRate_Mantissa; 
-    UART1->CR2 |= (uint8_t)(UART1_CR2_TEN | UART1_CR2_REN);  //使能收发    
+//    UART1->BRR2 |= (uint8_t)((uint8_t)(((BaudRate_Mantissa100 - (BaudRate_Mantissa * 100)) << 4) / 100) & (uint8_t)0x0F) |\
+//                   (uint8_t)((BaudRate_Mantissa >> 4) & (uint8_t)0xF0);  
+//    UART1->BRR1 |= (uint8_t)BaudRate_Mantissa; 
+    //设置为9600
+    UART1->BRR2 = 0x2;
+    UART1->BRR1 = 0x68;
+    UART1->CR2 = (uint8_t)(UART1_CR2_TEN | UART1_CR2_REN);  //使能收发        
     //bootloader通信过程
     while(i)    
     {
-        if(UART1->SR & (u8)UART1_FLAG_RXNE)    //wait for head 
+        if(UART1->SR & (u8)UART1_FLAG_RXNE)    //wait for head           
         {
             ch = (uint8_t)UART1->DR;    
             if(ch == BOOT_HEAD) break;
@@ -40,23 +43,24 @@ int main(void)
         goto goApp;
     }
     else
-    {
-        //unlock flash,解锁flash
-        FLASH->PUKR = FLASH_RASS_KEY1;
-        FLASH->PUKR = FLASH_RASS_KEY2;
-        UART1_SendB(0xa0|INIT_PAGE);    
+    {               
+        UART1_SendB(BOOT_OK);   
         while(1)
         {
             ch = UART1_RcvB();
             switch(ch)
             {
+//            case BOOT_HEAD:
+//               UART1_SendB(BOOT_OK);
+//               break;
             case BOOT_GO:
                 goApp:
-                FLASH->IAPSR &= FLASH_MEMTYPE_PROG; //锁住flash
+                //FLASH->IAPSR &= FLASH_MEMTYPE_PROG; //锁住flash
                 //goto app
+                //UART1_SendB(BOOT_OK);
                 asm("JP $8200");
                 break;
-            case BOOT_WRITE:
+            case BOOT_WRITE:                
                 page = UART1_RcvB();
                 addr = (u8*)(FLASH_START + (page << BLOCK_SHIFT));
                 verify = 0;
@@ -103,13 +107,30 @@ u8 UART1_RcvB(void)
 //addr must at begin of block
 IN_RAM(void FLASH_ProgBlock(uint8_t * addr, uint8_t *Buffer))
 {
+    static u8 bFirst=0;
+    if(bFirst==0)
+    {
+        bFirst=1;
+        //unlock flash,解锁flash
+        FLASH->PUKR = FLASH_RASS_KEY1;
+        FLASH->PUKR = FLASH_RASS_KEY2;      
+        //清除app代码        
+        FLASH->CR2 |= FLASH_CR2_ERASE;
+        FLASH->NCR2 &= (uint8_t)(~FLASH_NCR2_NERASE);
+        uint16_t appAddr;
+        for (appAddr = FLASH_APP_START; appAddr < FLASH_END; appAddr++)
+        {
+            *((PointerAttr uint8_t*)appAddr) = 0;    
+        }
+    }
     u8 i;
     /* Standard programming mode */ /*No need in standard mode */
     FLASH->CR2 |= FLASH_CR2_PRG;
     FLASH->NCR2 &= (uint8_t)(~FLASH_NCR2_NPRG);
-    /* Copy data bytes from RAM to FLASH memory */
+    /* Copy data bytes from RAM to FLASH memory */    
     for (i = 0; i < BLOCK_BYTES; i++)
     {
         *((PointerAttr uint8_t*) (uint16_t)addr + i) = ((uint8_t)(Buffer[i]));    
     }
+    
 }

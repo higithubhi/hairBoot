@@ -11,10 +11,13 @@
 #include <stdio.h>
 
 //device information
-#define INIT_PAGE 0x08
+#define  INIT_PAGE 0x08
+
 #define  BLOCK_BYTES          64
-#define	 BLOCK_SHIFT		  6
+#define	 BLOCK_SHIFT          6
+#define  EEPROM_START         0x004000
 #define  FLASH_START          0x008000
+#define  FLASH_APP_START      0x008200
 #define  FLASH_END            0x009FFF
 
 //cmd code
@@ -25,6 +28,7 @@
 #define BOOT_WRITE 0xa7
 #define BOOT_VERIFY 0xa8
 #define BOOT_GO 0xa9
+#define BOOT_EEP_WRITE 0xaa
 
 //uart parameter
 #define SYSCLK 16000000

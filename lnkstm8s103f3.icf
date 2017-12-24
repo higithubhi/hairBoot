@@ -2,9 +2,7 @@
 //      Example ILINK command file for
 //      STM8 IAR C/C++ Compiler and Assembler.
 //
-//      Copyright 2010 IAR Systems AB.
-//
-//      $Revision: 2384 $
+//      Copyright 2015 IAR Systems AB.
 //
 /////////////////////////////////////////////////////////////////
 
@@ -46,6 +44,8 @@ initialize by copy { rw section .far.bss,
                      rw section .tiny.data,
                      ro section .tiny.rodata };
 
+initialize by copy with packing = none {section __DLIB_PERTHREAD };
+
 do not initialize  { rw section .eeprom.noinit,
                      rw section .far.noinit,
                      rw section .huge.noinit,
@@ -62,6 +62,7 @@ place in TinyData               { rw section .tiny.bss,
 
 place at end of NearData        { block CSTACK };
 place in NearData               { block HEAP,
+                                  rw section __DLIB_PERTHREAD,
                                   rw section .far.bss,
                                   rw section .far.data,
                                   rw section .far.noinit,
@@ -77,12 +78,13 @@ place in NearData               { block HEAP,
                                   rw section .near_func.textrw };
 
 place at start of NearFuncCode  { block INTVEC };
-place in NearFuncCode           { ro section .far.data_init,
+place in NearFuncCode           { ro section __DLIB_PERTHREAD_init,
+                                  ro section .far.data_init,
                                   ro section .far_func.textrw_init,
-      	 			  ro section .huge.data_init,
+                                  ro section .huge.data_init,
                                   ro section .huge_func.textrw_init,
-				  ro section .iar.init_table,
-				  ro section .init_array,
+                                  ro section .iar.init_table,
+                		  ro section .init_array,
                                   ro section .near.data_init,
                                   ro section .near.rodata,
 				  ro section .near_func.text,
@@ -96,6 +98,10 @@ place in FarFuncCode            { ro section .far.rodata,
 place in HugeFuncCode           { ro section .huge.rodata,
                                   ro section .huge_func.text };
 
-place in Eeprom                 { rw section .eeprom.noinit };
+place in Eeprom                 {    section .eeprom.noinit };
+
+place in Eeprom                 {    section .eeprom.data };
+
+place in Eeprom                 {    section .eeprom.rodata };
 
 /////////////////////////////////////////////////////////////////
