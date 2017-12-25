@@ -39,21 +39,7 @@
 //reg definition
 #define FLASH_RASS_KEY1 ((uint8_t)0x56) /*!< First RASS key */
 #define FLASH_RASS_KEY2 ((uint8_t)0xAE) /*!< Second RASS key */
-typedef enum { UART1_FLAG_TXE   = (uint16_t)0x0080, /*!< Transmit Data Register Empty flag */
-               UART1_FLAG_TC    = (uint16_t)0x0040, /*!< Transmission Complete flag */
-               UART1_FLAG_RXNE  = (uint16_t)0x0020, /*!< Read Data Register Not Empty flag */
-               UART1_FLAG_IDLE  = (uint16_t)0x0010, /*!< Idle line detected flag */
-               UART1_FLAG_OR    = (uint16_t)0x0008, /*!< OverRun error flag */
-               UART1_FLAG_NF    = (uint16_t)0x0004, /*!< Noise error flag */
-               UART1_FLAG_FE    = (uint16_t)0x0002, /*!< Framing Error flag */
-               UART1_FLAG_PE    = (uint16_t)0x0001, /*!< Parity Error flag */
-               UART1_FLAG_LBDF  = (uint16_t)0x0210, /*!< Line Break Detection Flag */
-               UART1_FLAG_SBK   = (uint16_t)0x0101  /*!< Send Break characters Flag */
-             } UART1_Flag_TypeDef;
-typedef enum {
-    FLASH_MEMTYPE_PROG      = (uint8_t)0xFD, /*!< Program memory */
-    FLASH_MEMTYPE_DATA      = (uint8_t)0xF7  /*!< Data EEPROM memory */
-} FLASH_MemType_TypeDef;
+
 
 void Set_HSI(void);
 void InitUART1(u32 baud);

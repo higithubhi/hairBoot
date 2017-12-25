@@ -25,6 +25,7 @@ enum DEV_OP
 {
     OPEN,
     CLOSE,
+    GO_APP,
     CONNECT,
     UPDATE,
     SET_DJCS,
@@ -47,6 +48,7 @@ public slots:
     void openDev(QString port);
     void closeDev();
     void connectDev();
+    void goApp();
     void updateDev(QString filename);
     void eepSet(DEV_OP op,QVariant value);
     void stop();

@@ -16,6 +16,7 @@ MainWindow::MainWindow(QWidget *parent) :
     {
         ui->comboBox->addItem(sp.portName());
     }
+    ui->lineEdit_2->setValidator(new QDoubleValidator());
 
     QThread* thread=new QThread();
     CBootFlash* bootFlash=new CBootFlash();
@@ -27,6 +28,7 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(this,SIGNAL(connectDev()),bootFlash,SLOT(connectDev()),Qt::QueuedConnection);
     connect(this,SIGNAL(updateDev(QString)),bootFlash,SLOT(updateDev(QString)),Qt::QueuedConnection);
     connect(this,SIGNAL(eepSet(DEV_OP,QVariant)),bootFlash,SLOT(eepSet(DEV_OP,QVariant)),Qt::QueuedConnection);
+    connect(this,&MainWindow::goApp,bootFlash,&CBootFlash::goApp,Qt::QueuedConnection);
     connect(bootFlash,&CBootFlash::devResult,this,&MainWindow::onDevResult,Qt::QueuedConnection);
     bootFlash->moveToThread(thread);
     thread->start();
@@ -125,4 +127,27 @@ void MainWindow::on_toolButton_clicked()
     {
         ui->lineEdit->setText(path);
     }
+}
+
+void MainWindow::on_pushButton_4_clicked()
+{
+    emit goApp();
+}
+
+void MainWindow::on_pushButton_7_clicked()
+{
+    QString text=ui->lineEdit_2->text();
+    emit eepSet(SET_DJCS,text);
+}
+
+void MainWindow::on_pushButton_8_clicked()
+{
+    QString text=ui->lineEdit_2->text();
+    emit eepSet(SET_WDXS,text);
+}
+
+void MainWindow::on_pushButton_9_clicked()
+{
+    QString text=ui->lineEdit_2->text();
+    emit eepSet(SET_FIX,text);
 }

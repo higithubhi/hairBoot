@@ -189,7 +189,7 @@
         </option>
         <option>
           <name>CCDefines</name>
-          <state></state>
+          <state>STM8S003</state>
         </option>
         <option>
           <name>CCPreprocFile</name>
@@ -225,7 +225,7 @@
         </option>
         <option>
           <name>CCEnableRemarks</name>
-          <state>0</state>
+          <state>1</state>
         </option>
         <option>
           <name>CCDiagSuppress</name>
@@ -257,7 +257,9 @@
         </option>
         <option>
           <name>CCIncludePath2</name>
-          <state></state>
+          <state>$PROJ_DIR$\App</state>
+          <state>$PROJ_DIR$\Bsp</state>
+          <state>$PROJ_DIR$\..\..\STM8S_StdPeriph_Lib\Libraries\STM8S_StdPeriph_Driver\inc</state>
         </option>
         <option>
           <name>CCStdIncCheck</name>
@@ -983,6 +985,7 @@
         <option>
           <name>CCDefines</name>
           <state>NDEBUG</state>
+          <state>STM8S003</state>
         </option>
         <option>
           <name>CCPreprocFile</name>
@@ -998,7 +1001,7 @@
         </option>
         <option>
           <name>CCListCFile</name>
-          <state>0</state>
+          <state>1</state>
         </option>
         <option>
           <name>CCListCMnemonics</name>
@@ -1006,15 +1009,15 @@
         </option>
         <option>
           <name>CCListCMessages</name>
-          <state>0</state>
+          <state>1</state>
         </option>
         <option>
           <name>CCListAssFile</name>
-          <state>0</state>
+          <state>1</state>
         </option>
         <option>
           <name>CCListAssSource</name>
-          <state>0</state>
+          <state>1</state>
         </option>
         <option>
           <name>CCEnableRemarks</name>
@@ -1050,7 +1053,8 @@
         </option>
         <option>
           <name>CCIncludePath2</name>
-          <state></state>
+          <state>$PROJ_DIR$\inc</state>
+          <state>$PROJ_DIR$</state>
         </option>
         <option>
           <name>CCStdIncCheck</name>
@@ -1203,7 +1207,7 @@
         </option>
         <option>
           <name>AsmEnableRemarks</name>
-          <state>0</state>
+          <state>1</state>
         </option>
         <option>
           <name>AsmDiagnosticsSuppress</name>

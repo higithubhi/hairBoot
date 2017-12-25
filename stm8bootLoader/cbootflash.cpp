@@ -60,6 +60,7 @@ void CBootFlash::openDev(QString port)
 void CBootFlash::closeDev()
 {
     bStopConnect=true;
+    serialport->close();
     emit devResult(CLOSE,true,"串口已关闭");
 }
 
@@ -104,6 +105,12 @@ void CBootFlash::connectDev()
     {
         emit devResult(CONNECT,false,"请先打开串口");
     }
+}
+
+void CBootFlash::goApp()
+{
+    serialport->putChar(BOOT_GO);
+    emit devResult(GO_APP,true,"启动APP请求");
 }
 void sleep(int ms)
 {
@@ -165,13 +172,13 @@ void CBootFlash::updateDev(QString filename)
                            qDebug()<<arr.size();
                            if(res==BOOT_ERR)
                            {
-                               emit devResult(UPDATE,false,"升级APP:page="+QString::number(page,10)+"写入失败，重试");
+                               emit devResult(UPDATE,false,"升级APP:page="+QString::number(page-APP_START_PAGE+1,10)+"写入失败，重试");
                                sleep(1000);
                                goto retry;
                            }
                            else if(res==BOOT_OK)
                            {
-                               emit devResult(UPDATE,false,"升级APP:page="+QString::number(page,10)+"写入成功");
+                               emit devResult(UPDATE,false,"升级APP:page="+QString::number(page-APP_START_PAGE+1,10)+"写入成功");
                                page++;
                            }
                        }
@@ -188,8 +195,18 @@ void CBootFlash::updateDev(QString filename)
     }
 
 }
-
+union f2b{
+    float fdata;
+    unsigned char bdata[4];
+};
 void CBootFlash::eepSet(DEV_OP op, QVariant value)
 {
+    f2b s;
+    s.fdata=value.toFloat();
+
     emit devResult(op,true,"设置成功");
+    //先发一条，防止忘记进入APP
+    //serialport->putChar(BOOT_GO);
+
+
 }

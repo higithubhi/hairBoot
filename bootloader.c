@@ -6,7 +6,49 @@
 **********************************************************************************/
 
 #include "bootloader.h"
-#include "string.h"
+
+struct interrupt_vector {  
+    u16 interrupt_instruction;      
+    u16 interrupt_handler;  
+};
+extern void __iar_program_start(void);
+//redirected interrupt table  
+__root const struct interrupt_vector __intvec[32] @ ".intvec" 
+= {  
+    {0x8200, (u16)__iar_program_start}, /* reset */  
+    {0x8200, (u16)FLASH_APP_START + 4}, /* trap  */  
+    {0x8200, (u16)FLASH_APP_START + 8}, /* irq0  */  
+    {0x8200, (u16)FLASH_APP_START + 12}, /* irq1  */  
+    {0x8200, (u16)FLASH_APP_START + 16}, /* irq2  */  
+    {0x8200, (u16)FLASH_APP_START + 20}, /* irq3  */  
+    {0x8200, (u16)FLASH_APP_START + 24}, /* irq4  */  
+    {0x8200, (u16)FLASH_APP_START + 28}, /* irq5  */  
+    {0x8200, (u16)FLASH_APP_START + 32}, /* irq6  */  
+    {0x8200, (u16)FLASH_APP_START + 36}, /* irq7  */  
+    {0x8200, (u16)FLASH_APP_START + 40}, /* irq8  */  
+    {0x8200, (u16)FLASH_APP_START + 44}, /* irq9  */  
+    {0x8200, (u16)FLASH_APP_START + 48}, /* irq10 */  
+    {0x8200, (u16)FLASH_APP_START + 52}, /* irq11 */  
+    {0x8200, (u16)FLASH_APP_START + 56}, /* irq12 */  
+    {0x8200, (u16)FLASH_APP_START + 60}, /* irq13 */  
+    {0x8200, (u16)FLASH_APP_START + 64}, /* irq14 */  
+    {0x8200, (u16)FLASH_APP_START + 68}, /* irq15 */  
+    {0x8200, (u16)FLASH_APP_START + 72}, /* irq16 */  
+    {0x8200, (u16)FLASH_APP_START + 76}, /* irq17 */  
+    {0x8200, (u16)FLASH_APP_START + 80}, /* irq18 */  
+    {0x8200, (u16)FLASH_APP_START + 84}, /* irq19 */  
+    {0x8200, (u16)FLASH_APP_START + 88}, /* irq20 */  
+    {0x8200, (u16)FLASH_APP_START + 92}, /* irq21 */  
+    {0x8200, (u16)FLASH_APP_START + 96}, /* irq22 */  
+    {0x8200, (u16)FLASH_APP_START + 100}, /* irq23 */  
+    {0x8200, (u16)FLASH_APP_START + 104}, /* irq24 */  
+    {0x8200, (u16)FLASH_APP_START + 108}, /* irq25 */  
+    {0x8200, (u16)FLASH_APP_START + 112}, /* irq26 */  
+    {0x8200, (u16)FLASH_APP_START + 116}, /* irq27 */  
+    {0x8200, (u16)FLASH_APP_START + 120}, /* irq28 */  
+    {0x8200, (u16)FLASH_APP_START + 124}, /* irq29 */  
+};  
+
 int main(void)
 {
     u16 tryCnt = 65535;
@@ -50,9 +92,9 @@ int main(void)
             ch = UART1_RcvB();
             switch(ch)
             {
-//            case BOOT_HEAD:
-//               UART1_SendB(BOOT_OK);
-//               break;
+            case BOOT_HEAD:
+               UART1_SendB(BOOT_OK);
+               break;
             case BOOT_GO:
                 goApp:
                 //FLASH->IAPSR &= FLASH_MEMTYPE_PROG; //锁住flash
@@ -105,7 +147,7 @@ u8 UART1_RcvB(void)
 }
 
 //addr must at begin of block
-IN_RAM(void FLASH_ProgBlock(uint8_t * addr, uint8_t *Buffer))
+__ramfunc void FLASH_ProgBlock(uint8_t * addr, uint8_t *Buffer)
 {
     static u8 bFirst=0;
     if(bFirst==0)
