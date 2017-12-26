@@ -12,6 +12,12 @@
 #define BOOT_VERIFY 0xa8
 #define BOOT_GO 0xa9
 #define BOOT_EEP_WRITE 0xaa
+#define BOOT_REBOOT  0xabab
+#define CMD_SET_DJCS 0XB1
+#define CMD_SET_WDXS 0XB2
+#define CMD_SET_FIX  0XB3
+
+
 
 #define  BLOCK_BYTES          64
 #define	 BLOCK_SHIFT          6

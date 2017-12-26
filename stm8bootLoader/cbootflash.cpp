@@ -197,16 +197,67 @@ void CBootFlash::updateDev(QString filename)
 }
 union f2b{
     float fdata;
-    unsigned char bdata[4];
+    char bdata[4];
 };
 void CBootFlash::eepSet(DEV_OP op, QVariant value)
 {
     f2b s;
     s.fdata=value.toFloat();
+    if(serialport!=NULL && serialport->isOpen())
+    {
+        //先发一条，防止忘记进入APP
+        serialport->putChar(BOOT_GO);
+        char cmd=0;
+        switch(op)
+        {
+        case SET_DJCS:
+            cmd=CMD_SET_DJCS;
+            break;
+         case SET_WDXS:
+            cmd=CMD_SET_WDXS;
+            break;
+          case SET_FIX:
+            cmd=CMD_SET_FIX;
+            break;
+          default:
+            break;
+        }
+        if(cmd!=0)
+        {
+            serialport->putChar(cmd);
+            serialport->write(s.bdata,4);
+            if (serialport->waitForReadyRead(1000))
+            {
+                unsigned char cmd;
 
-    emit devResult(op,true,"设置成功");
-    //先发一条，防止忘记进入APP
-    //serialport->putChar(BOOT_GO);
+                if(serialport->read((char*)&cmd,1)>0 )
+                {
+                    if(cmd==BOOT_OK)
+                    {
+                        emit devResult(op,true,"设置成功");
+                        //读取多余的响应
+                        QByteArray arr= serialport->readAll();
+                        qDebug()<<arr.size();
+                        return;
+                    }
+                    else
+                    {
+                        emit devResult(CONNECT,false,"设置失败，请重试");
+                        //return;
+                    }
+                }
+
+            }
+        }
+    }
+    else
+    {
+        emit devResult(CONNECT,false,"请先打开串口");
+    }
+
+
+
+
 
 
 }
