@@ -30,6 +30,7 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(this,SIGNAL(eepSet(DEV_OP,QVariant)),bootFlash,SLOT(eepSet(DEV_OP,QVariant)),Qt::QueuedConnection);
     connect(this,&MainWindow::goApp,bootFlash,&CBootFlash::goApp,Qt::QueuedConnection);
     connect(bootFlash,&CBootFlash::devResult,this,&MainWindow::onDevResult,Qt::QueuedConnection);
+    connect(bootFlash,&CBootFlash::devlog,this,&MainWindow::onLogDev,Qt::QueuedConnection);
     bootFlash->moveToThread(thread);
     thread->start();
 
@@ -150,4 +151,9 @@ void MainWindow::on_pushButton_9_clicked()
 {
     QString text=ui->lineEdit_2->text();
     emit eepSet(SET_FIX,text);
+}
+
+void MainWindow::onLogDev(QString lg)
+{
+    ui->listWidget_2->insertItem(0,lg);
 }

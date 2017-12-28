@@ -22,6 +22,7 @@ private slots:
 
     void onDevStopped();
     void onDevResult(DEV_OP op,bool flag,QString log);
+    void onLogDev(QString lg);
 
     void on_pushButton_3_clicked();
 
@@ -34,6 +35,7 @@ private slots:
     void on_pushButton_8_clicked();
 
     void on_pushButton_9_clicked();
+
 
 private:
     Ui::MainWindow *ui;

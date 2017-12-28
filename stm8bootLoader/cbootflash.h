@@ -48,7 +48,7 @@ signals:
 
     void devStopped();
     void devResult(DEV_OP op,bool flag,QString log);
-
+    void devlog(QString data);
 
 public slots:    
     void openDev(QString port);

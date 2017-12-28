@@ -72,6 +72,7 @@ void CBootFlash::connectDev()
         while(!bStopConnect)
         {
             serialport->putChar(BOOT_HEAD);
+            emit devlog(QString("s:%x ").arg(BOOT_HEAD));
             if (!serialport->waitForBytesWritten(1000))
             {
                 continue;
@@ -83,12 +84,21 @@ void CBootFlash::connectDev()
 
                 if(serialport->read((char*)&cmd,1)>0 )
                 {
+                    emit devlog(QString("R:%x ").arg(cmd));
                     if(cmd==BOOT_OK)
                     {
                         emit devResult(CONNECT,true,"连接设备成功");
                         //读取多余的响应
                         QByteArray arr= serialport->readAll();
-                        qDebug()<<arr.size();
+                        if(arr.size()>0)
+                        {
+                            QString str="R:";
+                            for(auto v:arr)
+                            {
+                                str+=QString("%x ").arg(v);
+                            }
+                            emit devlog(str);
+                        }
                         return;
                     }
                     else
@@ -110,6 +120,7 @@ void CBootFlash::connectDev()
 void CBootFlash::goApp()
 {
     serialport->putChar(BOOT_GO);
+    emit devlog(QString("s:%x ").arg(BOOT_GO));
     emit devResult(GO_APP,true,"启动APP请求");
 }
 void sleep(int ms)
@@ -207,6 +218,7 @@ void CBootFlash::eepSet(DEV_OP op, QVariant value)
     {
         //先发一条，防止忘记进入APP
         serialport->putChar(BOOT_GO);
+        emit devlog(QString("s:%x ").arg(BOOT_GO));
         char cmd=0;
         switch(op)
         {
@@ -225,19 +237,36 @@ void CBootFlash::eepSet(DEV_OP op, QVariant value)
         if(cmd!=0)
         {
             serialport->putChar(cmd);
+            emit devlog(QString("s:%x ").arg(cmd));
             serialport->write(s.bdata,4);
+            QString str;
+            for(auto v:s.bdata)
+            {
+                str+=QString("%x ").arg(v);
+            }
+            emit devlog(str);
+
             if (serialport->waitForReadyRead(1000))
             {
                 unsigned char cmd;
 
                 if(serialport->read((char*)&cmd,1)>0 )
                 {
+                    emit devlog(QString("R:%x ").arg(cmd));
                     if(cmd==BOOT_OK)
                     {
-                        emit devResult(op,true,"设置成功");
+                        emit devResult(op,true,"设置成功");                        
                         //读取多余的响应
                         QByteArray arr= serialport->readAll();
-                        qDebug()<<arr.size();
+                        if(arr.size()>0)
+                        {
+                            QString str="R:";
+                            for(auto v:arr)
+                            {
+                                str+=QString("%x ").arg(v);
+                            }
+                            emit devlog(str);
+                        }
                         return;
                     }
                     else
