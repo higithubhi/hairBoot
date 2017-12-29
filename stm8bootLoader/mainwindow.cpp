@@ -17,7 +17,8 @@ MainWindow::MainWindow(QWidget *parent) :
         ui->comboBox->addItem(sp.portName());
     }
     ui->lineEdit_2->setValidator(new QDoubleValidator());
-
+    ui->lineEdit_4->setValidator(new QDoubleValidator());//电导率
+    ui->lineEdit_3->setValidator(new QIntValidator());//温度
     QThread* thread=new QThread();
     CBootFlash* bootFlash=new CBootFlash();
 
@@ -29,6 +30,7 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(this,SIGNAL(updateDev(QString)),bootFlash,SLOT(updateDev(QString)),Qt::QueuedConnection);
     connect(this,SIGNAL(eepSet(DEV_OP,QVariant)),bootFlash,SLOT(eepSet(DEV_OP,QVariant)),Qt::QueuedConnection);
     connect(this,&MainWindow::goApp,bootFlash,&CBootFlash::goApp,Qt::QueuedConnection);
+    connect(this,&MainWindow::autoDjcs,bootFlash,&CBootFlash::autoDjcs,Qt::QueuedConnection);
     connect(bootFlash,&CBootFlash::devResult,this,&MainWindow::onDevResult,Qt::QueuedConnection);
     connect(bootFlash,&CBootFlash::devlog,this,&MainWindow::onLogDev,Qt::QueuedConnection);
     bootFlash->moveToThread(thread);
@@ -156,4 +158,18 @@ void MainWindow::on_pushButton_9_clicked()
 void MainWindow::onLogDev(QString lg)
 {
     ui->listWidget_2->insertItem(0,lg);
+}
+
+void MainWindow::on_pushButton_5_clicked()
+{
+    QString ddl=ui->lineEdit_4->text();
+    QString wd=ui->lineEdit_3->text();
+    if(ddl.size()>0 && wd.size()>0)
+    {
+        emit autoDjcs(ddl.toFloat(),wd.toInt());
+    }
+    else
+    {
+        QMessageBox::information(NULL, "提示", "请先填写溶液的电导率和温度");
+    }
 }

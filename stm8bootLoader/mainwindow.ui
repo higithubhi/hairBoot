@@ -97,9 +97,9 @@
     <property name="geometry">
      <rect>
       <x>10</x>
-      <y>210</y>
+      <y>240</y>
       <width>391</width>
-      <height>311</height>
+      <height>281</height>
      </rect>
     </property>
    </widget>
@@ -109,7 +109,7 @@
       <x>40</x>
       <y>110</y>
       <width>311</width>
-      <height>81</height>
+      <height>53</height>
      </rect>
     </property>
     <layout class="QVBoxLayout" name="verticalLayout">
@@ -152,6 +152,45 @@
       <height>192</height>
      </rect>
     </property>
+   </widget>
+   <widget class="QWidget" name="horizontalLayoutWidget_3">
+    <property name="geometry">
+     <rect>
+      <x>46</x>
+      <y>170</y>
+      <width>317</width>
+      <height>51</height>
+     </rect>
+    </property>
+    <layout class="QHBoxLayout" name="horizontalLayout_3">
+     <item>
+      <widget class="QLabel" name="label_4">
+       <property name="text">
+        <string>电导率：(us/m)</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QLineEdit" name="lineEdit_4"/>
+     </item>
+     <item>
+      <widget class="QLabel" name="label_3">
+       <property name="text">
+        <string>温度:</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QLineEdit" name="lineEdit_3"/>
+     </item>
+     <item>
+      <widget class="QPushButton" name="pushButton_5">
+       <property name="text">
+        <string>自动计算</string>
+       </property>
+      </widget>
+     </item>
+    </layout>
    </widget>
   </widget>
   <widget class="QMenuBar" name="menuBar">

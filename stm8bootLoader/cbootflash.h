@@ -16,6 +16,7 @@
 #define CMD_SET_DJCS 0XB1
 #define CMD_SET_WDXS 0XB2
 #define CMD_SET_FIX  0XB3
+#define CMD_AUTO_DJCS 0xb4
 
 
 
@@ -36,7 +37,8 @@ enum DEV_OP
     UPDATE,
     SET_DJCS,
     SET_WDXS,
-    SET_FIX
+    SET_FIX,
+    AUTO_DJCS
 };
 class CBootFlash : public QObject
 {
@@ -58,6 +60,7 @@ public slots:
     void updateDev(QString filename);
     void eepSet(DEV_OP op,QVariant value);
     void stop();
+    void autoDjcs(float ddl,int wd);
 
 private:
      QSerialPort* serialport;

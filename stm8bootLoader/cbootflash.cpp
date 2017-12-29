@@ -4,6 +4,13 @@
 #include <QMutex>
 #include <QWaitCondition>
 #include <QDebug>
+
+union f2b{
+    float fdata;
+    char bdata[4];
+};
+
+
 CBootFlash::CBootFlash(QObject *parent) : QObject(parent)
 {
     serialport=NULL;
@@ -21,6 +28,70 @@ void CBootFlash::stop()
     }
     deleteLater();
     emit devStopped();
+}
+
+void CBootFlash::autoDjcs(float ddl, int wd)
+{
+    f2b s;
+    s.fdata=ddl;
+    if(serialport!=NULL && serialport->isOpen())
+    {
+        //6字节，0XB4+1字节温度+4字节浮点数，响应0xa0+4字节电极常数值
+        //CMD_AUTO_DJCS
+        serialport->putChar(CMD_AUTO_DJCS);
+        emit devlog(QString("s:%x ").arg(CMD_AUTO_DJCS));
+        serialport->putChar(wd&0xff);
+        emit devlog(QString("s:%x ").arg(wd&0xff));
+        serialport->write(s.bdata,4);
+        QString str="s:";
+        for(auto v:s.bdata)
+        {
+            str+=QString("%x ").arg(v);
+        }
+        emit devlog(str);
+
+        if (serialport->waitForReadyRead(1000))
+        {
+            unsigned char cmd;
+            if(serialport->read((char*)&cmd,1)>0 )
+            {
+                emit devlog(QString("R:%x ").arg(cmd));
+                if(cmd==BOOT_OK)
+                {
+                    emit devResult(AUTO_DJCS,true,"设置成功");
+                    //读取电极常数
+                    QByteArray arr= serialport->readAll();
+                    if(arr.size()>0)
+                    {
+                        QString str="R:";
+                        for(auto v:arr)
+                        {
+                            str+=QString("%x ").arg(v);
+                        }
+                        emit devlog(str);
+                    }
+                    if(arr.size()==4)
+                    {
+                        s.bdata[0]=arr[3];
+                        s.bdata[1]=arr[2];
+                        s.bdata[2]=arr[1];
+                        s.bdata[3]=arr[0];
+                        emit devlog(QString("自动计算的电极常数=%f").arg(s.fdata));
+                    }
+                    return;
+                }
+                else
+                {
+                    emit devResult(CONNECT,false,"设置失败，请重试");
+                    //return;
+                }
+            }
+        }
+    }
+    else
+    {
+        emit devResult(CONNECT,false,"请先打开串口");
+    }
 }
 
 void CBootFlash::openDev(QString port)
@@ -206,10 +277,7 @@ void CBootFlash::updateDev(QString filename)
     }
 
 }
-union f2b{
-    float fdata;
-    char bdata[4];
-};
+
 void CBootFlash::eepSet(DEV_OP op, QVariant value)
 {
     f2b s;
@@ -239,7 +307,7 @@ void CBootFlash::eepSet(DEV_OP op, QVariant value)
             serialport->putChar(cmd);
             emit devlog(QString("s:%x ").arg(cmd));
             serialport->write(s.bdata,4);
-            QString str;
+            QString str="R:";
             for(auto v:s.bdata)
             {
                 str+=QString("%x ").arg(v);

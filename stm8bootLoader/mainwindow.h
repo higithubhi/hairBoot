@@ -37,6 +37,8 @@ private slots:
     void on_pushButton_9_clicked();
 
 
+    void on_pushButton_5_clicked();
+
 private:
     Ui::MainWindow *ui;
     void log(QString log);
@@ -47,6 +49,7 @@ signals:
     void connectDev();
     void updateDev(QString filename);
     void eepSet(DEV_OP op,QVariant value);
+    void autoDjcs(float ddl,int wd);
 };
 
 #endif // MAINWINDOW_H
