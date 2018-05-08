@@ -14,24 +14,27 @@ union f2b{
 CBootFlash::CBootFlash(QObject *parent) : QObject(parent)
 {
     serialport=NULL;
+    connect(this,SIGNAL(devcloseSerial()),this,SLOT(closeSerial()),Qt::QueuedConnection);
 }
 
 void CBootFlash::stop()
 {
+    std::lock_guard<std::mutex> lock(_mutex);
     if(serialport!=NULL)
     {
         if(serialport->isOpen())
         {
             serialport->close();
         }
-        delete serialport;
+        //delete serialport;
     }
-    deleteLater();
+    //deleteLater();
     emit devStopped();
 }
 
 void CBootFlash::autoDjcs(float ddl, int wd)
 {
+    std::lock_guard<std::mutex> lock(_mutex);
     f2b s;
     s.fdata=ddl;
     if(serialport!=NULL && serialport->isOpen())
@@ -39,49 +42,58 @@ void CBootFlash::autoDjcs(float ddl, int wd)
         //6字节，0XB4+1字节温度+4字节浮点数，响应0xa0+4字节电极常数值
         //CMD_AUTO_DJCS
         serialport->putChar(CMD_AUTO_DJCS);
-        emit devlog(QString("s:%x ").arg(CMD_AUTO_DJCS));
+        emit devlog(QString("s:0x%1 ").arg((uint8_t)CMD_AUTO_DJCS,0,16));
         serialport->putChar(wd&0xff);
-        emit devlog(QString("s:%x ").arg(wd&0xff));
+        emit devlog(QString("s:0x%1 ").arg((uint8_t)wd&0xff,0,16));
         serialport->write(s.bdata,4);
         QString str="s:";
         for(auto v:s.bdata)
         {
-            str+=QString("%x ").arg(v);
+            str+=QString("0x%1 ").arg((uint8_t)v,0,16);
         }
         emit devlog(str);
 
         if (serialport->waitForReadyRead(1000))
-        {
-            unsigned char cmd;
-            if(serialport->read((char*)&cmd,1)>0 )
+        {            
+            QByteArray arr= serialport->readAll();
+            if(arr.size()>0 )
             {
-                emit devlog(QString("R:%x ").arg(cmd));
-                if(cmd==BOOT_OK)
+                emit devlog(QString("R:0x%1 ").arg(arr.at(0),0,16));
+                if(arr[0]==BOOT_OK)
                 {
                     emit devResult(AUTO_DJCS,true,"设置成功");
-                    //读取电极常数
+                    //读取电极常数                    
+                    if(arr.size()>0)
+                    {
+                        QString str="R:";
+                        for(auto v:arr)
+                        {
+                            str+=QString("0x%1 ").arg(v,0,16);
+                        }
+                        emit devlog(str);
+                    }
+                    if(arr.size()==5)
+                    {
+                        s.bdata[0]=arr[3];
+                        s.bdata[1]=arr[2];
+                        s.bdata[2]=arr[1];
+                        s.bdata[3]=arr[0];
+                        emit devlog(QString("自动计算的电极常数=%1").arg(s.fdata));
+                    }
+                    return;
+                }
+                else
+                {
                     QByteArray arr= serialport->readAll();
                     if(arr.size()>0)
                     {
                         QString str="R:";
                         for(auto v:arr)
                         {
-                            str+=QString("%x ").arg(v);
+                            str+=QString("0x%1 ").arg(v,0,16);
                         }
                         emit devlog(str);
                     }
-                    if(arr.size()==4)
-                    {
-                        s.bdata[0]=arr[3];
-                        s.bdata[1]=arr[2];
-                        s.bdata[2]=arr[1];
-                        s.bdata[3]=arr[0];
-                        emit devlog(QString("自动计算的电极常数=%f").arg(s.fdata));
-                    }
-                    return;
-                }
-                else
-                {
                     emit devResult(CONNECT,false,"设置失败，请重试");
                     //return;
                 }
@@ -94,9 +106,25 @@ void CBootFlash::autoDjcs(float ddl, int wd)
     }
 }
 
+void CBootFlash::closeSerial()
+{
+    std::lock_guard<std::mutex> lock(_mutex);
+    if(serialport)
+    {
+        if(serialport->isOpen())
+        {
+            serialport->close();
+        }
+        delete serialport;
+        serialport=NULL;
+    }
+    emit devResult(CLOSE,true,"串口已关闭");
+}
+
 void CBootFlash::openDev(QString port)
 {
 
+    std::lock_guard<std::mutex> lock(_mutex);
     if(serialport!=NULL)
     {
         if(serialport->isOpen())
@@ -131,8 +159,7 @@ void CBootFlash::openDev(QString port)
 void CBootFlash::closeDev()
 {
     bStopConnect=true;
-    serialport->close();
-    emit devResult(CLOSE,true,"串口已关闭");
+    emit devcloseSerial();
 }
 
 void CBootFlash::connectDev()
@@ -142,45 +169,50 @@ void CBootFlash::connectDev()
         bStopConnect=false;
         while(!bStopConnect)
         {
+            std::lock_guard<std::mutex> lock(_mutex);
             serialport->putChar(BOOT_HEAD);
-            emit devlog(QString("s:%x ").arg(BOOT_HEAD));
-            if (!serialport->waitForBytesWritten(1000))
+            QString ss=QString("s:0x%1 ").arg((uint8_t)BOOT_HEAD,0,16);
+            emit devlog(QString("s:0x%1 ").arg((uint8_t)BOOT_HEAD,0,16));
+            if(serialport->isOpen())
             {
-                continue;
-            }
-            // read response
-            if (serialport->waitForReadyRead(100))
-            {
-                unsigned char cmd;
-
-                if(serialport->read((char*)&cmd,1)>0 )
+                if (!serialport->waitForBytesWritten(1000))
                 {
-                    emit devlog(QString("R:%x ").arg(cmd));
-                    if(cmd==BOOT_OK)
-                    {
-                        emit devResult(CONNECT,true,"连接设备成功");
-                        //读取多余的响应
-                        QByteArray arr= serialport->readAll();
-                        if(arr.size()>0)
-                        {
-                            QString str="R:";
-                            for(auto v:arr)
-                            {
-                                str+=QString("%x ").arg(v);
-                            }
-                            emit devlog(str);
-                        }
-                        return;
-                    }
-                    else
-                    {
-                        //emit devResult(CONNECT,false,"连接设备失败，请重启设备");
-                        //return;
-                    }
+                    continue;
                 }
+                // read response
+                if (serialport->waitForReadyRead(100))
+                {
+                    unsigned char cmd;
 
+                    if(serialport->read((char*)&cmd,1)>0 )
+                    {
+                        emit devlog(QString("R:0x%1 ").arg(cmd,0,16));
+                        if(cmd==BOOT_OK)
+                        {
+                            emit devResult(CONNECT,true,"连接设备成功");
+                            //读取多余的响应
+                            QByteArray arr= serialport->readAll();
+                            if(arr.size()>0)
+                            {
+                                QString str="R:";
+                                for(auto v:arr)
+                                {
+                                    str+=QString("0x%1 ").arg(v,0,16);
+                                }
+                                emit devlog(str);
+                            }
+                            return;
+                        }
+                        else
+                        {
+                            //emit devResult(CONNECT,false,"连接设备失败，请重启设备");
+                            //return;
+                        }
+                    }
+
+                }
             }
-        }
+        }        
     }
     else
     {
@@ -190,9 +222,17 @@ void CBootFlash::connectDev()
 
 void CBootFlash::goApp()
 {
-    serialport->putChar(BOOT_GO);
-    emit devlog(QString("s:%x ").arg(BOOT_GO));
-    emit devResult(GO_APP,true,"启动APP请求");
+    if(serialport!=NULL && serialport->isOpen())
+    {
+        std::lock_guard<std::mutex> lock(_mutex);
+        serialport->putChar(BOOT_GO);
+        emit devlog(QString("s:0x%1 ").arg((uint8_t)BOOT_GO,0,16));
+        emit devResult(GO_APP,true,"启动APP请求");
+    }
+    else
+    {
+        emit devResult(CONNECT,false,"请先打开串口");
+    }
 }
 void sleep(int ms)
 {
@@ -205,6 +245,7 @@ void sleep(int ms)
 
 void CBootFlash::updateDev(QString filename)
 {
+    std::lock_guard<std::mutex> lock(_mutex);
     QFile file(filename);
     if(!file.open(QIODevice::ReadOnly))
     {
@@ -280,13 +321,14 @@ void CBootFlash::updateDev(QString filename)
 
 void CBootFlash::eepSet(DEV_OP op, QVariant value)
 {
+    std::lock_guard<std::mutex> lock(_mutex);
     f2b s;
     s.fdata=value.toFloat();
     if(serialport!=NULL && serialport->isOpen())
     {
         //先发一条，防止忘记进入APP
         serialport->putChar(BOOT_GO);
-        emit devlog(QString("s:%x ").arg(BOOT_GO));
+        emit devlog(QString("s:0x%1 ").arg((uint8_t)BOOT_GO,0,16));
         char cmd=0;
         switch(op)
         {
@@ -305,12 +347,12 @@ void CBootFlash::eepSet(DEV_OP op, QVariant value)
         if(cmd!=0)
         {
             serialport->putChar(cmd);
-            emit devlog(QString("s:%x ").arg(cmd));
+            emit devlog(QString("s:0x%1 ").arg((uint8_t)cmd,0,16));
             serialport->write(s.bdata,4);
             QString str="R:";
             for(auto v:s.bdata)
             {
-                str+=QString("%x ").arg(v);
+                str+=QString("0x%1 ").arg((uint8_t)v,0,16);
             }
             emit devlog(str);
 
@@ -320,7 +362,7 @@ void CBootFlash::eepSet(DEV_OP op, QVariant value)
 
                 if(serialport->read((char*)&cmd,1)>0 )
                 {
-                    emit devlog(QString("R:%x ").arg(cmd));
+                    emit devlog(QString("R:0x%1 ").arg(cmd,0,16));
                     if(cmd==BOOT_OK)
                     {
                         emit devResult(op,true,"设置成功");                        
@@ -331,7 +373,7 @@ void CBootFlash::eepSet(DEV_OP op, QVariant value)
                             QString str="R:";
                             for(auto v:arr)
                             {
-                                str+=QString("%x ").arg(v);
+                                str+=QString("0x%1 ").arg(v,0,16);
                             }
                             emit devlog(str);
                         }

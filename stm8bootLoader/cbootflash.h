@@ -1,6 +1,6 @@
 #ifndef CBOOTFLASH_H
 #define CBOOTFLASH_H
-
+#include <mutex>
 #include <QObject>
 #include <QVariant>
 //cmd code
@@ -51,7 +51,7 @@ signals:
     void devStopped();
     void devResult(DEV_OP op,bool flag,QString log);
     void devlog(QString data);
-
+    void devcloseSerial();
 public slots:    
     void openDev(QString port);
     void closeDev();
@@ -61,10 +61,11 @@ public slots:
     void eepSet(DEV_OP op,QVariant value);
     void stop();
     void autoDjcs(float ddl,int wd);
-
+    void closeSerial();
 private:
      QSerialPort* serialport;
      bool bStopConnect;
+     std::mutex _mutex;
 };
 
 #endif // CBOOTFLASH_H
